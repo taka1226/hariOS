@@ -1,7 +1,7 @@
 ; naskfunc
 ; TAB=4
 
-;[FORMAT "WCOFF"]				; オブジェクトファイルを作るモード ; NASMではエラーが出るのでこの行削除	
+;[FORMAT "WCOFF"]				; オブジェクトファイルを作るモード ; NASMではエラーが出るのでこの行削除
 ;[INSTRSET "i486p"]				; 486の命令まで使いたいという記述 ; NASMではエラーが出るのでこの行削除
 [BITS 32]						; 32ビットモード用の機械語を作らせる
 ;[FILE "naskfunc.nas"]			; ソースファイル名情報 ; NASMではエラーが出るのでこの行削除
@@ -14,6 +14,8 @@
 		GLOBAL	io_load_eflags, io_store_eflags
 		GLOBAL	load_gdtr, load_idtr
 		GLOBAL	asm_inthandler21, asm_inthandler27, asm_inthandler2c
+		GLOBAL  store_cr0, load_cr0
+		GLOBAL  memtest_sub
 		EXTERN	inthandler21, inthandler27, inthandler2c
 
 [SECTION .text]
@@ -140,3 +142,46 @@ asm_inthandler2c:
 		POP		DS
 		POP		ES
 		IRETD
+
+store_cr0:		; void store_cr0(int cr0);
+		MOV		EAX,[ESP+4]
+		MOV		CR0,EAX
+		RET
+
+load_cr0:		; int load_cr0(void);
+		MOV		EAX,CR0
+		RET
+
+memtest_sub:	; unsigned int memtest_sub(unsigned int start, unsigned int end)
+		PUSH	EDI
+		PUSH	ESI
+		PUSH	EBX
+		MOV		ESI,0xaa55aa55
+		MOV		EDI,0x55aa55aa
+		MOV		EAX,[ESP+12+4]
+
+mts_loop:
+		MOV		EBX,EAX
+		ADD		EBX,0xffc				; p = i + 0xffc;
+		MOV		EDX,[EBX]				; old = *p;
+		MOV		[EBX],ESI				; *p = pat0;
+		XOR		DWORD [EBX],0xffffffff	; *p ^= 0xffffffff;
+		CMP		EDI,[EBX]				; if (*p != pat1) goto fin;
+		JNE		mts_fin
+		XOR		DWORD [EBX],0xffffffff	; *p ^= 0xffffffff;
+		CMP		ESI,[EBX]				; if (*p != pat0) goto fin;
+		JNE		mts_fin
+		MOV		[EBX],EDX				; *p = old;
+		ADD		EAX,0x1000				; i += 0x1000;
+		CMP		EAX,[ESP+12+8]			; if (i <= end) goto mts_loop;
+		JBE		mts_loop
+		POP		EBX
+		POP		ESI
+		POP		EDI
+		RET
+mts_fin:
+		MOV		[EBX],EDX				; *p = old;
+		POP		EBX
+		POP		ESI
+		POP		EDI
+		RET

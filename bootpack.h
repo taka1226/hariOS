@@ -26,6 +26,10 @@ void load_idtr(int limit, int addr);
 void asm_inthandler21(void);
 void asm_inthandler27(void);
 void asm_inthandler2c(void);
+void store_cr0(int cr0);
+int load_cr0(void);
+unsigned int memtest_sub(unsigned int start, unsigned int end);
+
 
 /* fifo.c */
 struct FIFO8 {
@@ -121,3 +125,9 @@ struct MOUSE_DEC {
 	unsigned char buf[3], phase;
 	int x, y, btn;
 };
+
+void wait_KBC_sendready(void);
+void init_keyboard(void);
+
+void enable_mouse(struct MOUSE_DEC *mdec);
+int mouse_decode(struct MOUSE_DEC *mdec, unsigned char dat);
