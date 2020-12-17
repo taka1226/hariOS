@@ -1,10 +1,13 @@
 #include <stdio.h>
 
-int main(){
-  //printf("hello, world\n");
+int main(void)
+{
+	printf("Hello, world\n");
 
-  int s = 1;
-  //printf("%p\n", &s);
-  printf("size of (unsigned char *)   : %zu\n", sizeof(unsigned char *));
-  printf("hello, world\n");
+	goto END;	//	goto命令
+
+	printf("World\n");
+
+END:			//	gotoラベル
+	return 0;
 }
